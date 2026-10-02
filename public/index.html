@@ -193,8 +193,8 @@
         <div class="quick-bar-title">⚡ Quick Add Row to Sheet:</div>
         <div class="quick-bar-inputs">
           <input type="date" id="inlineDate" required title="Date" />
-          <input type="text" id="inlineTech" list="techniciansDatalist" placeholder="Technician name..." required />
-          <input type="text" id="inlineSite" list="sitesDatalist" placeholder="Site..." required />
+          <input type="text" id="inlineTech" list="techniciansDatalist" placeholder="Select or type Technician..." required />
+          <input type="text" id="inlineSite" list="sitesDatalist" placeholder="Select or type Site..." required />
           <div class="time-pair">
             <label>Start:</label>
             <input type="time" id="inlineStart" value="17:00" required />
@@ -205,6 +205,9 @@
           </div>
           <div class="hours-preview-pill" id="inlineHoursPreview">3.00 hrs</div>
           <button type="submit" class="btn btn-primary btn-sm">➕ Add to Report</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="switchTab('manageListsView')" title="Add or Remove Technicians & Sites">
+            👷 +/- Techs &amp; Sites
+          </button>
         </div>
       </form>
 
@@ -288,13 +291,19 @@
                 <input type="date" id="formDate" required />
               </div>
               <div class="form-field">
-                <label for="formTechnician">Technician Name *</label>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <label for="formTechnician">Technician Name *</label>
+                  <button type="button" class="link-btn" style="font-size:0.76rem;" onclick="switchTab('manageListsView')">+ Add / Remove</button>
+                </div>
                 <input type="text" id="formTechnician" list="techniciansDatalist" placeholder="Select or type technician name" required />
               </div>
             </div>
 
             <div class="form-field">
-              <label for="formSite">Site / Location *</label>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label for="formSite">Site / Location *</label>
+                <button type="button" class="link-btn" style="font-size:0.76rem;" onclick="switchTab('manageListsView')">+ Add / Remove</button>
+              </div>
               <input type="text" id="formSite" list="sitesDatalist" placeholder="Select or type site name" required />
             </div>
 
@@ -396,31 +405,37 @@
       </div>
     </section>
 
-    <!-- TAB 4: MANAGE TECHNICIANS & SITES -->
+    <!-- TAB 4: ADD OR REMOVE TECHNICIANS & SITES -->
     <section id="manageListsView" class="tab-panel no-print">
       <div class="dashboard-Grid">
         <div class="card">
-          <div class="card-header">
-            <h2>👷 Saved Technicians</h2>
-            <p>Pre-fill dropdown list for quick selection</p>
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2>👷 Add or Remove Technicians</h2>
+              <p>Manage technician names for quick dropdown selection</p>
+            </div>
+            <span class="hours-badge" id="techCountBadge">0 Technicians</span>
           </div>
           <form id="addTechForm" class="inline-list-form">
-            <input type="text" id="newTechName" placeholder="Technician Full Name *" required />
-            <input type="text" id="newTechEmpId" placeholder="ID (e.g. TECH-106)" />
-            <button type="submit" class="btn btn-primary btn-sm">Add Technician</button>
+            <input type="text" id="newTechName" placeholder="New Technician Full Name *" required />
+            <input type="text" id="newTechEmpId" placeholder="Employee ID (Optional)" />
+            <button type="submit" class="btn btn-primary btn-sm">➕ Add Technician</button>
           </form>
           <ul id="techManageList" class="manage-items-list"></ul>
         </div>
 
         <div class="card">
-          <div class="card-header">
-            <h2>🏭 Saved Sites / Locations</h2>
-            <p>Pre-fill dropdown list of work sites</p>
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2>🏭 Add or Remove Sites / Locations</h2>
+              <p>Manage work sites for quick dropdown selection</p>
+            </div>
+            <span class="hours-badge" id="siteCountBadge">0 Sites</span>
           </div>
           <form id="addSiteForm" class="inline-list-form">
-            <input type="text" id="newSiteName" placeholder="Site Name *" required />
-            <input type="text" id="newSiteLocation" placeholder="Area / Sector" />
-            <button type="submit" class="btn btn-primary btn-sm">Add Site</button>
+            <input type="text" id="newSiteName" placeholder="New Site Name *" required />
+            <input type="text" id="newSiteLocation" placeholder="Location / Area (Optional)" />
+            <button type="submit" class="btn btn-primary btn-sm">➕ Add Site</button>
           </form>
           <ul id="siteManageList" class="manage-items-list"></ul>
         </div>

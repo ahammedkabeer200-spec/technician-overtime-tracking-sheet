@@ -1062,9 +1062,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnInstall.classList.add('hidden');
   });
 
-  if (state.token) {
-    await bootstrapAuthenticatedSession();
-  } else {
-    showLoginScreen();
-  }
+  // Always require login on every visit or page reload
+  showLoginScreen();
 });

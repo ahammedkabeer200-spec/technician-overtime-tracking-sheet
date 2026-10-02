@@ -398,27 +398,37 @@ function renderDashboard() {
 
 // Render Tab 4: Manage Technicians & Sites
 function renderManageLists() {
+  const techBadge = document.getElementById('techCountBadge');
+  if (techBadge) techBadge.textContent = `${state.technicians.length} Technicians`;
+
+  const siteBadge = document.getElementById('siteCountBadge');
+  if (siteBadge) siteBadge.textContent = `${state.sites.length} Sites`;
+
   const techUl = document.getElementById('techManageList');
-  techUl.innerHTML = state.technicians.map((t) => `
-    <li>
-      <div>
-        <strong>${esc(t.name)}</strong>
-        ${t.employee_id ? `<span style="color:#64748b;font-size:0.8rem;margin-left:6px;">(${esc(t.employee_id)})</span>` : ''}
-      </div>
-      <button type="button" class="row-btn" onclick="deleteTechnician(${t.id})">🗑️</button>
-    </li>
-  `).join('');
+  techUl.innerHTML = state.technicians.length === 0
+    ? `<li style="color:#64748b;">No technicians saved yet. Add one above!</li>`
+    : state.technicians.map((t) => `
+      <li>
+        <div>
+          <strong>👷 ${esc(t.name)}</strong>
+          ${t.employee_id ? `<span style="color:#64748b;font-size:0.8rem;margin-left:6px;">(${esc(t.employee_id)})</span>` : ''}
+        </div>
+        <button type="button" class="row-btn" style="color:#dc2626;border-color:#fecaca;" onclick="deleteTechnician(${t.id})">🗑️ Remove</button>
+      </li>
+    `).join('');
 
   const siteUl = document.getElementById('siteManageList');
-  siteUl.innerHTML = state.sites.map((s) => `
-    <li>
-      <div>
-        <strong>${esc(s.name)}</strong>
-        ${s.location ? `<span style="color:#64748b;font-size:0.8rem;margin-left:6px;">• ${esc(s.location)}</span>` : ''}
-      </div>
-      <button type="button" class="row-btn" onclick="deleteSite(${s.id})">🗑️</button>
-    </li>
-  `).join('');
+  siteUl.innerHTML = state.sites.length === 0
+    ? `<li style="color:#64748b;">No sites saved yet. Add one above!</li>`
+    : state.sites.map((s) => `
+      <li>
+        <div>
+          <strong>🏭 ${esc(s.name)}</strong>
+          ${s.location ? `<span style="color:#64748b;font-size:0.8rem;margin-left:6px;">• ${esc(s.location)}</span>` : ''}
+        </div>
+        <button type="button" class="row-btn" style="color:#dc2626;border-color:#fecaca;" onclick="deleteSite(${s.id})">🗑️ Remove</button>
+      </li>
+    `).join('');
 }
 
 // Render Tab 5: Admin User Management List

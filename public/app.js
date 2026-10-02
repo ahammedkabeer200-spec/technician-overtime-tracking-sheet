@@ -536,12 +536,16 @@ window.deleteRecord = async function(id) {
 };
 
 window.deleteTechnician = async function(id) {
+  if (!confirm('Remove this technician from the dropdown list?')) return;
   await apiFetch(`/api/technicians/${id}`, { method: 'DELETE' });
+  showToast('Technician removed');
   await loadLookups();
 };
 
 window.deleteSite = async function(id) {
+  if (!confirm('Remove this site from the dropdown list?')) return;
   await apiFetch(`/api/sites/${id}`, { method: 'DELETE' });
+  showToast('Site removed');
   await loadLookups();
 };
 
@@ -571,6 +575,7 @@ function switchTab(tabId) {
   const filterBar = document.getElementById('filterBar');
   filterBar.classList.toggle('hidden', tabId === 'manageListsView' || tabId === 'securityView');
 }
+window.switchTab = switchTab;
 
 function initSSE() {
   if (state.sse) state.sse.close();
@@ -601,40 +606,10 @@ function initSSE() {
   };
 }
 
-async function bootstrapAuthenticatedSession() {
-  try {
-    const meRes = await apiFetch('/api/auth/me');
-    if (!meRes.ok) throw new Error('Invalid session');
-    const { user } = await meRes.json();
-    state.user = user;
-    hideLoginScreen();
-    updateCurrentUserUI();
-    await loadLookups();
-    await loadRecords();
-    initSSE();
-  } catch (_) {
-    showLoginScreen();
-  }
-}
-
 document.addEventListener('DOMContentLoaded', async () => {
   const today = getTodayISO();
   document.getElementById('inlineDate').value = today;
   document.getElementById('formDate').value = today;
-
-  // Demo quick-fill buttons on Login Screen
-  document.getElementById('btnFillAdmin').addEventListener('click', () => {
-    document.getElementById('loginUsername').value = 'admin';
-    document.getElementById('loginPassword').value = 'Admin@123';
-  });
-  document.getElementById('btnFillSupervisor').addEventListener('click', () => {
-    document.getElementById('loginUsername').value = 'supervisor';
-    document.getElementById('loginPassword').value = 'Supervisor@123';
-  });
-  document.getElementById('btnFillEngineer').addEventListener('click', () => {
-    document.getElementById('loginUsername').value = 'engineer1';
-    document.getElementById('loginPassword').value = 'Engineer@123';
-  });
 
   // Toggle between Sign In & Forgot Password forms
   document.getElementById('btnShowForgot').addEventListener('click', () => {
@@ -656,7 +631,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const res = await fetch(`/api/auth/recovery-hint?username=${encodeURIComponent(u)}`);
       if (res.ok) {
         const info = await res.json();
-        document.getElementById('forgotHintText').textContent = `Hint for ${info.full_name}: ${info.hint}`;
+        document.getElementById('forgotHintText').textContent = `Account: ${info.full_name}`;
       }
     } catch (_) {}
   });
@@ -686,12 +661,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       document.getElementById('forgotPasswordForm').classList.add('hidden');
       document.getElementById('loginForm').classList.remove('hidden');
-      document.getElementById('loginUsername').value = username;
-      document.getElementById('loginPassword').value = newPassword;
+      document.getElementById('loginUsername').value = '';
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('forgotPin').value = '';
+      document.getElementById('forgotNewPassword').value = '';
       const successBox = document.getElementById('loginSuccess');
       successBox.textContent = data.message;
       successBox.classList.remove('hidden');
-      showToast('Password reset! Click Sign In.');
+      showToast('Password reset! Please type your username and new password to sign in.');
     } catch (_) {
       errBox.textContent = 'Network error resetting password.';
       errBox.classList.remove('hidden');
@@ -724,7 +701,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       state.token = data.token;
       state.user = data.user;
-      localStorage.setItem('ot_auth_token', data.token);
+      document.getElementById('loginUsername').value = '';
       document.getElementById('loginPassword').value = '';
       hideLoginScreen();
       updateCurrentUserUI();

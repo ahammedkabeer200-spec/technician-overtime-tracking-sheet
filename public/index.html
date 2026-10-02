@@ -12,20 +12,23 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <!-- SECURITY LOGIN OVERLAY (Blocks unauthorized public access) -->
+  <!-- SECURITY LOGIN & FORGOT PASSWORD OVERLAY -->
   <div id="loginScreen" class="login-screen no-print">
     <div class="login-card">
       <div class="login-brand">
         <img src="/icon.svg" alt="Logo" class="login-logo" />
         <h2>Overtime Report Portal</h2>
-        <p>Authorized Access Only — Supervisors &amp; Engineers</p>
+        <p>Authorized Access Only — Admin, Supervisors &amp; Engineers</p>
       </div>
 
+      <!-- SIGN IN FORM -->
       <form id="loginForm" class="login-form">
         <div id="loginError" class="login-error hidden"></div>
+        <div id="loginSuccess" class="info-callout hidden"></div>
+
         <div class="form-field">
           <label for="loginUsername">Username</label>
-          <input type="text" id="loginUsername" placeholder="Enter Supervisor or Engineer username" autocomplete="username" required />
+          <input type="text" id="loginUsername" placeholder="Enter Admin, Supervisor, or Engineer username" autocomplete="username" required />
         </div>
         <div class="form-field">
           <label for="loginPassword">Password</label>
@@ -34,16 +37,46 @@
         <button type="submit" class="btn btn-primary btn-lg login-submit">
           🔒 Sign In to Overtime System
         </button>
+        <div style="text-align: right; margin-top: 4px;">
+          <button type="button" id="btnShowForgot" class="link-btn">Forgot Password?</button>
+        </div>
+      </form>
+
+      <!-- FORGOT PASSWORD FORM (Hidden by default) -->
+      <form id="forgotPasswordForm" class="login-form hidden">
+        <div id="forgotError" class="login-error hidden"></div>
+        <div class="form-field">
+          <label for="forgotUsername">Your Username *</label>
+          <input type="text" id="forgotUsername" placeholder="e.g. supervisor or admin" required />
+        </div>
+        <div class="form-field">
+          <label for="forgotPin">Recovery PIN or Master Recovery Key *</label>
+          <input type="password" id="forgotPin" placeholder="Default PIN: 1234 (or ADMIN-RECOVERY-2026)" required />
+          <small id="forgotHintText" style="color:#64748b;font-size:0.76rem;">Enter your 4-digit Recovery PIN or ask Admin</small>
+        </div>
+        <div class="form-field">
+          <label for="forgotNewPassword">New Password (min 6 chars) *</label>
+          <input type="password" id="forgotNewPassword" placeholder="Enter new password" minlength="6" required />
+        </div>
+        <button type="submit" class="btn btn-success btn-lg login-submit">
+          🔑 Reset My Password
+        </button>
+        <div style="text-align: center; margin-top: 4px;">
+          <button type="button" id="btnBackToLogin" class="link-btn">← Back to Sign In</button>
+        </div>
       </form>
 
       <div class="login-default-hint">
-        <strong>Default Initial Accounts (Change after login):</strong>
+        <strong>Default Initial Accounts (Tap to fill):</strong>
         <div class="demo-creds">
+          <button type="button" class="cred-pill" id="btnFillAdmin">
+            🛡️ Admin: <code>admin</code> / <code>Admin@123</code> (PIN: <code>1234</code>)
+          </button>
           <button type="button" class="cred-pill" id="btnFillSupervisor">
-            👔 Supervisor: <code>supervisor</code> / <code>Supervisor@123</code>
+            👔 Supervisor: <code>supervisor</code> / <code>Supervisor@123</code> (PIN: <code>1234</code>)
           </button>
           <button type="button" class="cred-pill" id="btnFillEngineer">
-            👷 Engineer: <code>engineer1</code> / <code>Engineer@123</code>
+            👷 Engineer: <code>engineer1</code> / <code>Engineer@123</code> (PIN: <code>1234</code>)
           </button>
         </div>
       </div>
@@ -56,20 +89,20 @@
       <img src="/icon.svg" alt="Logo" class="brand-logo" />
       <div>
         <h1>Overtime Report Manager</h1>
-        <p class="brand-subtitle">Supervisor Excel Sheet • Mobile Logger • Secure Cloud Sync</p>
+        <p class="brand-subtitle">Supervisor Excel Sheet • Auto-Backup Vault • Admin &amp; User Control</p>
       </div>
     </div>
 
     <div class="header-actions">
       <div id="userBadge" class="user-badge" title="Currently signed-in user">
         <span>👤</span>
-        <span id="currentUserName">Supervisor</span>
-        <span id="currentUserRole" class="role-tag">Supervisor</span>
+        <span id="currentUserName">Admin</span>
+        <span id="currentUserRole" class="role-tag">Admin</span>
       </div>
 
-      <div id="syncStatus" class="sync-badge connected" title="Real-time database sync across all connected devices">
+      <div id="syncStatus" class="sync-badge connected" title="Real-time database sync &amp; auto-backup active">
         <span class="sync-dot"></span>
-        <span id="syncText">Live Sync</span>
+        <span id="syncText">Backup &amp; Sync Active</span>
       </div>
 
       <button class="btn btn-outline btn-sm" id="btnConnectDevices" type="button">
@@ -99,6 +132,16 @@
     </div>
   </header>
 
+  <!-- Auto-Vault Recovery Notice Banner (Appears automatically if Browser Vault has extra records after a server update) -->
+  <div id="vaultRecoveryBanner" class="vault-banner hidden no-print">
+    <div>
+      <strong>🛡️ Safe App Update Detected:</strong> Your browser's Auto-Backup Vault has saved records that can be merged into the server without errors.
+    </div>
+    <button type="button" class="btn btn-success btn-sm" id="btnRestoreVaultNow">
+      🔄 Restore Missing Data Now
+    </button>
+  </div>
+
   <!-- Navigation Tabs (Desktop Top Bar & Mobile Bottom Bar) -->
   <nav class="app-nav no-print">
     <button class="nav-tab active" data-tab="sheetView" type="button">
@@ -118,8 +161,8 @@
       <span>Technicians &amp; Sites</span>
     </button>
     <button class="nav-tab" data-tab="securityView" type="button">
-      <span class="nav-icon">🔐</span>
-      <span>Security &amp; Logins</span>
+      <span class="nav-icon">⚙️</span>
+      <span>Admin, Users &amp; Backup</span>
     </button>
   </nav>
 
@@ -184,7 +227,7 @@
         <div class="excel-formula-bar no-print">
           <span class="cell-ref">A1:G25</span>
           <span class="fx-symbol">fx</span>
-          <span class="formula-text">OVERTIME REPORT — Live Synchronized Sheet (Authorized Supervisors &amp; Engineers Only)</span>
+          <span class="formula-text">OVERTIME REPORT — Live Synchronized Sheet &amp; Auto-Backed Up</span>
         </div>
 
         <div class="excel-sheet-scroll">
@@ -399,17 +442,60 @@
       </div>
     </section>
 
-    <!-- TAB 5: SECURITY & ENGINEER LOGINS -->
+    <!-- TAB 5: ADMIN, USERS, PASSWORDS & BACKUP SYSTEM -->
     <section id="securityView" class="tab-panel no-print">
+      <!-- Row 1: Backup & Safe App Update System -->
+      <div class="card" style="margin-bottom: 18px;">
+        <div class="card-header">
+          <h2>💾 Full System Backup &amp; Zero-Data-Loss App Update Center</h2>
+          <p>Keep all existing Overtime Records, Technicians, Sites, and User Accounts safe across any web application update.</p>
+        </div>
+
+        <div class="backup-grid">
+          <div class="backup-box">
+            <h4>1. Download Full Backup (.json)</h4>
+            <p>Saves all overtime entries, technicians, sites, and user logins into a single backup file.</p>
+            <button type="button" class="btn btn-success btn-sm" id="btnDownloadBackup">
+              ⬇️ Download Full System Backup (.json)
+            </button>
+          </div>
+
+          <div class="backup-box">
+            <h4>2. Restore / Merge Backup (.json)</h4>
+            <p>Restore your backup after updating the web app. <strong>Safe Merge</strong> keeps new records and adds old ones without errors or duplicates.</p>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px;">
+              <select id="restoreModeSelect" style="padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.82rem;">
+                <option value="merge">Safe Merge (Recommended - Keep existing + Add backup)</option>
+                <option value="replace">Full Replace (Overwrite with backup file)</option>
+              </select>
+              <label class="btn btn-primary btn-sm file-label">
+                📤 Upload &amp; Restore (.json)
+                <input type="file" id="backupFileInput" accept=".json" hidden />
+              </label>
+            </div>
+          </div>
+
+          <div class="backup-box">
+            <h4>3. Browser Auto-Backup Vault</h4>
+            <p id="vaultStatusText">Automatically mirrors your latest data in this browser so nothing is lost during cloud server updates.</p>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnManualVaultSync">
+              🔄 Sync Browser Vault to Server
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Admin User Management & Personal Password Change -->
       <div class="dashboard-Grid">
-        <!-- Create / Manage Supervisor & Engineer Logins -->
-        <div class="card">
+        <!-- Admin User Management -->
+        <div class="card" id="adminUsersCard">
           <div class="card-header">
-            <h2>🔐 Authorized Supervisor &amp; Engineer Logins</h2>
-            <p>Only users listed here have permission to sign in and access overtime reports.</p>
+            <h2>👥 Admin User Management (Supervisors &amp; Engineers)</h2>
+            <p>Create accounts, assign roles, or reset any user's forgotten password</p>
           </div>
 
           <form id="addUserForm" class="overtime-form" style="margin-bottom: 18px;">
+            <input type="hidden" id="editUserId" value="" />
             <div class="form-row">
               <div class="form-field">
                 <label for="newUserUsername">Username *</label>
@@ -420,54 +506,73 @@
                 <input type="text" id="newUserFullName" placeholder="e.g. Engr. Khalid" required />
               </div>
             </div>
-            <div class="form-row">
+            <div class="form-row three-col">
               <div class="form-field">
-                <label for="newUserRole">Permission Role *</label>
+                <label for="newUserRole">Role *</label>
                 <select id="newUserRole">
-                  <option value="Engineer">Engineer (Log &amp; View Reports)</option>
-                  <option value="Supervisor">Supervisor (Full Admin &amp; User Control)</option>
+                  <option value="Engineer">Engineer</option>
+                  <option value="Supervisor">Supervisor</option>
+                  <option value="Admin">Admin</option>
                 </select>
               </div>
               <div class="form-field">
-                <label for="newUserPassword">Initial Password (min 6 chars) *</label>
+                <label for="newUserPassword" id="lblUserPassword">Password (min 6) *</label>
                 <input type="password" id="newUserPassword" placeholder="Set password" minlength="6" required />
               </div>
+              <div class="form-field">
+                <label for="newUserPin">Recovery PIN (4+ digits)</label>
+                <input type="text" id="newUserPin" placeholder="Default: 1234" value="1234" />
+              </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm" id="btnCreateUser">
-              ➕ Grant Login Permission
-            </button>
+            <div class="form-buttons">
+              <button type="submit" class="btn btn-primary btn-sm" id="btnCreateUser">
+                ➕ Create User Account
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm hidden" id="btnCancelUserEdit">
+                Cancel Edit
+              </button>
+            </div>
           </form>
 
           <ul id="userManageList" class="manage-items-list"></ul>
         </div>
 
-        <!-- Change Own Password & Cloud Info -->
+        <!-- Change Own Password & Recovery PIN -->
         <div class="card">
           <div class="card-header">
-            <h2>🔑 Change My Password</h2>
-            <p>Update your personal Supervisor or Engineer password</p>
+            <h2>🔑 Change My Password &amp; Recovery PIN</h2>
+            <p>Update your personal login password and "Forgot Password" Recovery PIN</p>
           </div>
           <form id="changePasswordForm" class="overtime-form">
             <div class="form-field">
               <label for="curPass">Current Password *</label>
-              <input type="password" id="curPass" required />
+              <input type="password" id="curPass" placeholder="Enter your current password" required />
             </div>
             <div class="form-field">
               <label for="newPass">New Password (min 6 chars) *</label>
-              <input type="password" id="newPass" minlength="6" required />
+              <input type="password" id="newPass" placeholder="Enter new password" minlength="6" required />
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label for="newPersonalPin">New Recovery PIN (Optional)</label>
+                <input type="text" id="newPersonalPin" placeholder="e.g. 5678 (Used if you forget password)" />
+              </div>
+              <div class="form-field">
+                <label for="newPinHint">PIN Hint (Optional)</label>
+                <input type="text" id="newPinHint" placeholder="e.g. Last 4 digits of phone" />
+              </div>
             </div>
             <button type="submit" class="btn btn-success btn-sm">
-              💾 Update My Password
+              💾 Update My Password &amp; PIN
             </button>
           </form>
 
-          <div class="info-callout" style="margin-top: 22px;">
-            <strong>☁️ 24/7 Public Cloud Security Features Active:</strong>
+          <div class="info-callout" style="margin-top: 20px;">
+            <strong>💡 How Forgot Password Works:</strong>
             <ul>
-              <li><strong>Encrypted Password Storage:</strong> All passwords are salted and hashed with <code>crypto.scrypt</code>.</li>
-              <li><strong>Signed Token Protection:</strong> Every API call &amp; Excel export requires a valid Supervisor/Engineer token.</li>
-              <li><strong>Brute-Force Protection:</strong> Automatically blocks repeated failed login attempts.</li>
-              <li><strong>Audit Trail:</strong> Every overtime entry records which Engineer or Supervisor logged it.</li>
+              <li><strong>Self-Service Reset:</strong> Click <em>"Forgot Password?"</em> on the Sign-In screen and enter your Username + 4-digit Recovery PIN.</li>
+              <li><strong>Admin Reset:</strong> An Admin or Supervisor can click <strong>🔑 Edit / Reset Pass</strong> next to any user on the left to set a new password directly.</li>
+              <li><strong>Master Emergency Key:</strong> Admin can always use <code>ADMIN-RECOVERY-2026</code> on the Forgot Password screen.</li>
             </ul>
           </div>
         </div>

@@ -1,4 +1,6 @@
-// Overtime Report Manager - Secure Frontend Application
+// Overtime Report Manager - Secure Frontend with Admin, Forgot Password & Auto-Backup Vault
+
+const VAULT_STORAGE_KEY = 'ot_auto_backup_vault_v2';
 
 const state = {
   token: localStorage.getItem('ot_auth_token') || '',
@@ -50,14 +52,17 @@ function handleLogout() {
   showLoginScreen();
 }
 
+function isAdminOrSupervisor() {
+  return state.user && (state.user.role === 'Admin' || state.user.role === 'Supervisor');
+}
+
 function updateCurrentUserUI() {
   if (!state.user) return;
   document.getElementById('currentUserName').textContent = state.user.full_name || state.user.username;
   document.getElementById('currentUserRole').textContent = state.user.role;
-  // Only Supervisors can create/delete other user logins
   const addUserForm = document.getElementById('addUserForm');
   if (addUserForm) {
-    addUserForm.classList.toggle('hidden', state.user.role !== 'Supervisor');
+    addUserForm.classList.toggle('hidden', !isAdminOrSupervisor());
   }
 }
 
@@ -70,7 +75,6 @@ function getTodayISO() {
   return `${y}-${m}-${d}`;
 }
 
-// Utility: Format YYYY-MM-DD to DD/MM/YYYY for supervisor table display
 function formatDateDMY(iso) {
   if (!iso) return '';
   const parts = String(iso).split('-');
@@ -80,7 +84,6 @@ function formatDateDMY(iso) {
   return iso;
 }
 
-// Utility: Calculate hours between two HH:MM strings (handles overnight shifts)
 function computeHours(startStr, endStr) {
   if (!startStr || !endStr) return { hours: 0, overnight: false };
   const [sh, sm] = startStr.split(':').map(Number);
@@ -108,7 +111,7 @@ function showToast(msg) {
   toast.className = 'toast';
   toast.textContent = msg;
   container.appendChild(toast);
-  setTimeout(() => toast.remove(), 3200);
+  setTimeout(() => toast.remove(), 3500);
 }
 
 function esc(str) {
@@ -133,6 +136,65 @@ function getFilterQuery() {
   if (site) params.set('site', site);
   if (search) params.set('search', search);
   return params.toString();
+}
+
+// --- BROWSER AUTO-BACKUP VAULT (Protects data across cloud app updates) ---
+function getLocalVault() {
+  try {
+    const raw = localStorage.getItem(VAULT_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function syncServerToLocalVault() {
+  try {
+    const res = await apiFetch('/api/backup/snapshot');
+    if (!res.ok) return;
+    const serverSnapshot = await res.json();
+    const existingVault = getLocalVault();
+
+    // Check if local vault has records that are missing on the server (e.g. after a cloud redeploy)
+    if (
+      existingVault &&
+      Array.isArray(existingVault.overtime_records) &&
+      existingVault.overtime_records.length > serverSnapshot.overtime_records.length &&
+      isAdminOrSupervisor()
+    ) {
+      document.getElementById('vaultRecoveryBanner').classList.remove('hidden');
+    } else {
+      document.getElementById('vaultRecoveryBanner').classList.add('hidden');
+      localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(serverSnapshot));
+    }
+
+    const vaultNow = getLocalVault() || serverSnapshot;
+    const vaultStatus = document.getElementById('vaultStatusText');
+    if (vaultStatus) {
+      vaultStatus.textContent = `Auto-Vault Active: ${vaultNow.overtime_records?.length || 0} records, ${vaultNow.technicians?.length || 0} technicians, ${vaultNow.users?.length || 0} users mirrored safely.`;
+    }
+  } catch (_) {}
+}
+
+async function restoreFromLocalVault() {
+  const vault = getLocalVault();
+  if (!vault) {
+    showToast('No local vault snapshot found in this browser.');
+    return;
+  }
+  const res = await apiFetch('/api/backup/restore', {
+    method: 'POST',
+    body: JSON.stringify({ snapshot: vault, mode: 'merge' })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    document.getElementById('vaultRecoveryBanner').classList.add('hidden');
+    showToast(`Restored ${data.restoredRecords} records, ${data.restoredTechs} technicians, ${data.restoredUsers} users!`);
+    await loadLookups();
+    await loadRecords();
+  } else {
+    showToast(data.error || 'Vault restore failed');
+  }
 }
 
 // Load Technicians, Sites & Users
@@ -176,6 +238,7 @@ async function loadRecords() {
   renderExcelSheet();
   renderRecentEntries();
   renderDashboard();
+  await syncServerToLocalVault();
 }
 
 // Render Tab 1: Supervisor Excel Sheet View
@@ -351,11 +414,11 @@ function renderManageLists() {
   `).join('');
 }
 
-// Render Tab 5: Authorized Users List
+// Render Tab 5: Admin User Management List
 function renderUsersList() {
   const ul = document.getElementById('userManageList');
   if (!ul) return;
-  const isSupervisor = state.user && state.user.role === 'Supervisor';
+  const canManage = isAdminOrSupervisor();
   ul.innerHTML = state.users.map((u) => `
     <li>
       <div>
@@ -363,18 +426,68 @@ function renderUsersList() {
         <span style="color:#64748b;font-size:0.82rem;margin-left:6px;">(@${esc(u.username)})</span>
         <span class="role-tag" style="margin-left:6px;">${esc(u.role)}</span>
       </div>
-      ${isSupervisor && u.id !== state.user.id
-        ? `<button type="button" class="row-btn" onclick="deleteUserAccount(${u.id})" title="Revoke Login Permission">🗑️ Revoke</button>`
-        : `<small style="color:#64748b;">Active</small>`}
+      <div style="display:flex; gap:6px; align-items:center;">
+        ${canManage
+          ? `<button type="button" class="row-btn" onclick="startEditUser(${u.id})" title="Reset Password or Change Role">🔑 Edit / Reset Pass</button>`
+          : ''}
+        ${canManage && u.id !== state.user.id
+          ? `<button type="button" class="row-btn" onclick="deleteUserAccount(${u.id})" title="Delete User">🗑️</button>`
+          : ''}
+      </div>
     </li>
   `).join('');
 }
 
+// Admin Edit User / Reset Password handler
+window.startEditUser = function(id) {
+  const target = state.users.find((u) => u.id === id);
+  if (!target) return;
+
+  document.getElementById('editUserId').value = target.id;
+  const usernameInput = document.getElementById('newUserUsername');
+  usernameInput.value = target.username;
+  usernameInput.disabled = true;
+
+  document.getElementById('newUserFullName').value = target.full_name;
+  document.getElementById('newUserRole').value = target.role;
+
+  const passInput = document.getElementById('newUserPassword');
+  passInput.value = '';
+  passInput.required = false;
+  passInput.placeholder = 'Leave blank to keep, or type new password';
+  document.getElementById('lblUserPassword').textContent = 'New Password (Optional)';
+
+  document.getElementById('newUserPin').value = '';
+  document.getElementById('newUserPin').placeholder = 'New PIN (Optional)';
+
+  document.getElementById('btnCreateUser').textContent = `💾 Save / Reset @${target.username}`;
+  document.getElementById('btnCancelUserEdit').classList.remove('hidden');
+};
+
+function resetUserForm() {
+  document.getElementById('editUserId').value = '';
+  const usernameInput = document.getElementById('newUserUsername');
+  usernameInput.value = '';
+  usernameInput.disabled = false;
+  document.getElementById('newUserFullName').value = '';
+  document.getElementById('newUserRole').value = 'Engineer';
+
+  const passInput = document.getElementById('newUserPassword');
+  passInput.value = '';
+  passInput.required = true;
+  passInput.placeholder = 'Set password';
+  document.getElementById('lblUserPassword').textContent = 'Password (min 6) *';
+
+  document.getElementById('newUserPin').value = '1234';
+  document.getElementById('btnCreateUser').textContent = '➕ Create User Account';
+  document.getElementById('btnCancelUserEdit').classList.add('hidden');
+}
+
 window.deleteUserAccount = async function(id) {
-  if (!confirm('Revoke login permission for this user?')) return;
+  if (!confirm('Delete this user account and revoke login access?')) return;
   const res = await apiFetch(`/api/users/${id}`, { method: 'DELETE' });
   if (res.ok) {
-    showToast('User login revoked');
+    showToast('User account deleted');
     await loadLookups();
   }
 };
@@ -453,7 +566,7 @@ function initSSE() {
 
   es.onopen = () => {
     badge.classList.add('connected');
-    text.textContent = 'Live Sync';
+    text.textContent = 'Backup & Sync Active';
   };
 
   es.onmessage = (evt) => {
@@ -493,6 +606,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('formDate').value = today;
 
   // Demo quick-fill buttons on Login Screen
+  document.getElementById('btnFillAdmin').addEventListener('click', () => {
+    document.getElementById('loginUsername').value = 'admin';
+    document.getElementById('loginPassword').value = 'Admin@123';
+  });
   document.getElementById('btnFillSupervisor').addEventListener('click', () => {
     document.getElementById('loginUsername').value = 'supervisor';
     document.getElementById('loginPassword').value = 'Supervisor@123';
@@ -502,11 +619,75 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('loginPassword').value = 'Engineer@123';
   });
 
+  // Toggle between Sign In & Forgot Password forms
+  document.getElementById('btnShowForgot').addEventListener('click', () => {
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('forgotPasswordForm').classList.remove('hidden');
+    document.getElementById('forgotUsername').value = document.getElementById('loginUsername').value;
+  });
+
+  document.getElementById('btnBackToLogin').addEventListener('click', () => {
+    document.getElementById('forgotPasswordForm').classList.add('hidden');
+    document.getElementById('loginForm').classList.remove('hidden');
+  });
+
+  // Fetch recovery hint when typing username in Forgot Password
+  document.getElementById('forgotUsername').addEventListener('blur', async (e) => {
+    const u = e.target.value.trim();
+    if (!u) return;
+    try {
+      const res = await fetch(`/api/auth/recovery-hint?username=${encodeURIComponent(u)}`);
+      if (res.ok) {
+        const info = await res.json();
+        document.getElementById('forgotHintText').textContent = `Hint for ${info.full_name}: ${info.hint}`;
+      }
+    } catch (_) {}
+  });
+
+  // Forgot Password Submit
+  document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errBox = document.getElementById('forgotError');
+    errBox.classList.add('hidden');
+
+    const username = document.getElementById('forgotUsername').value.trim();
+    const recoveryPin = document.getElementById('forgotPin').value.trim();
+    const newPassword = document.getElementById('forgotNewPassword').value;
+
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, recoveryPin, newPassword })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errBox.textContent = data.error || 'Password reset failed';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('forgotPasswordForm').classList.add('hidden');
+      document.getElementById('loginForm').classList.remove('hidden');
+      document.getElementById('loginUsername').value = username;
+      document.getElementById('loginPassword').value = newPassword;
+      const successBox = document.getElementById('loginSuccess');
+      successBox.textContent = data.message;
+      successBox.classList.remove('hidden');
+      showToast('Password reset! Click Sign In.');
+    } catch (_) {
+      errBox.textContent = 'Network error resetting password.';
+      errBox.classList.remove('hidden');
+    }
+  });
+
   // Login Form Submit
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const errBox = document.getElementById('loginError');
+    const successBox = document.getElementById('loginSuccess');
     errBox.classList.add('hidden');
+    successBox.classList.add('hidden');
 
     const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
@@ -530,7 +711,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('loginPassword').value = '';
       hideLoginScreen();
       updateCurrentUserUI();
-      showToast(`Welcome, ${data.user.full_name}!`);
+      showToast(`Welcome, ${data.user.full_name} (${data.user.role})!`);
       await loadLookups();
       await loadRecords();
       initSSE();
@@ -562,7 +743,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('inlineStart').addEventListener('input', updateInlineHours);
   document.getElementById('inlineEnd').addEventListener('input', updateInlineHours);
 
-  // Inline Quick Add Submit
   document.getElementById('inlineAddForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const date = document.getElementById('inlineDate').value;
@@ -678,50 +858,115 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadLookups();
   });
 
-  // Add Authorized User (Supervisor only)
+  // Admin Create or Edit User / Reset Password
   document.getElementById('addUserForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const editUserId = document.getElementById('editUserId').value;
     const username = document.getElementById('newUserUsername').value.trim();
     const full_name = document.getElementById('newUserFullName').value.trim();
     const role = document.getElementById('newUserRole').value;
     const password = document.getElementById('newUserPassword').value;
+    const recovery_pin = document.getElementById('newUserPin').value.trim();
 
-    const res = await apiFetch('/api/users', {
-      method: 'POST',
-      body: JSON.stringify({ username, full_name, role, password })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      document.getElementById('newUserUsername').value = '';
-      document.getElementById('newUserFullName').value = '';
-      document.getElementById('newUserPassword').value = '';
-      showToast(`Granted login permission to ${full_name}`);
-      await loadLookups();
+    if (editUserId) {
+      const res = await apiFetch(`/api/users/${editUserId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          full_name,
+          role,
+          newPassword: password || undefined,
+          newRecoveryPin: recovery_pin || undefined
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Updated user @${username} successfully!`);
+        resetUserForm();
+        await loadLookups();
+      } else {
+        showToast(data.error || 'Failed to update user');
+      }
     } else {
-      showToast(data.error || 'Could not create user');
+      const res = await apiFetch('/api/users', {
+        method: 'POST',
+        body: JSON.stringify({ username, full_name, role, password, recovery_pin })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Created account for ${full_name} (${role})`);
+        resetUserForm();
+        await loadLookups();
+      } else {
+        showToast(data.error || 'Could not create user');
+      }
     }
   });
 
-  // Change Password Form
+  document.getElementById('btnCancelUserEdit').addEventListener('click', resetUserForm);
+
+  // Change Own Password & Recovery PIN
   document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const currentPassword = document.getElementById('curPass').value;
     const newPassword = document.getElementById('newPass').value;
+    const newRecoveryPin = document.getElementById('newPersonalPin').value.trim();
+    const securityHint = document.getElementById('newPinHint').value.trim();
+
     const res = await apiFetch('/api/auth/change-password', {
       method: 'POST',
-      body: JSON.stringify({ currentPassword, newPassword })
+      body: JSON.stringify({ currentPassword, newPassword, newRecoveryPin, securityHint })
     });
     const data = await res.json();
     if (res.ok) {
       document.getElementById('curPass').value = '';
       document.getElementById('newPass').value = '';
-      showToast('Password updated successfully!');
+      document.getElementById('newPersonalPin').value = '';
+      document.getElementById('newPinHint').value = '';
+      showToast('Password & Recovery PIN updated!');
     } else {
       showToast(data.error || 'Failed to update password');
     }
   });
 
-  // Export Excel (.xlsx) with Auth Token
+  // Full System Backup Download (.json)
+  document.getElementById('btnDownloadBackup').addEventListener('click', () => {
+    window.location.href = `/api/backup/export?token=${encodeURIComponent(state.token)}`;
+    showToast('Downloading Full System Backup (.json)...');
+  });
+
+  // Restore / Safe Merge Backup (.json)
+  document.getElementById('backupFileInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const mode = document.getElementById('restoreModeSelect').value;
+    try {
+      const text = await file.text();
+      const snapshot = JSON.parse(text);
+      const res = await apiFetch('/api/backup/restore', {
+        method: 'POST',
+        body: JSON.stringify({ snapshot, mode })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(
+          `Restored ${data.restoredRecords} records, ${data.restoredTechs} technicians, ${data.restoredSites} sites, ${data.restoredUsers} users!`
+        );
+        await loadLookups();
+        await loadRecords();
+      } else {
+        showToast(`Restore failed: ${data.error}`);
+      }
+    } catch (err) {
+      showToast('Invalid JSON backup file');
+    }
+    e.target.value = '';
+  });
+
+  // Browser Auto-Vault Restore buttons
+  document.getElementById('btnRestoreVaultNow').addEventListener('click', restoreFromLocalVault);
+  document.getElementById('btnManualVaultSync').addEventListener('click', restoreFromLocalVault);
+
+  // Export Excel (.xlsx)
   document.getElementById('btnExportExcel').addEventListener('click', () => {
     const qs = getFilterQuery();
     const sep = qs ? '&' : '';
@@ -801,7 +1046,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnInstall.classList.add('hidden');
   });
 
-  // Check if user already has a valid token
   if (state.token) {
     await bootstrapAuthenticatedSession();
   } else {

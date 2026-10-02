@@ -1,0 +1,172 @@
+{
+  "version": "2.0",
+  "exported_at": "2026-10-02T16:10:27.058Z",
+  "users": [
+    {
+      "id": 1,
+      "username": "supervisor",
+      "full_name": "Main Supervisor",
+      "role": "Supervisor",
+      "password_hash": "460a82a8783af0b9ed405c8b7a414d92:66f1cb2d86bd61273117893e4892bc76b24b3a19e685bd5cb4811dafb03096ec44cc1db2adaa06944bd6d7e4e3db7c89f86d9f0c6823087a691959f203dd1597",
+      "created_at": "2026-10-02 15:39:03",
+      "recovery_pin_hash": "2a95c093d63f4151c6cff61b2125c63d:40954b0b24e86143c0897e16abade91c6065531ffba80c952a2c7a97a2a311743c07b66cc8029e4a7bb1339196d688d8e252955216ee1a9a18f6b439db1e5b9e",
+      "security_hint": "Default PIN: 1234"
+    },
+    {
+      "id": 2,
+      "username": "engineer1",
+      "full_name": "Duty Site Engineer",
+      "role": "Engineer",
+      "password_hash": "040e5b882a28f8c0836f41e8e83564c0:94a983e02f46148680e3b12ae1c665a170b264091d18e68cf27b6dceaf7844dad1a2c4b684cf4094eb84e75ec69513a6886a0bf154098791376125dabf38912e",
+      "created_at": "2026-10-02 15:39:04",
+      "recovery_pin_hash": "2d304a778484458924ec3aad59876196:d2c8a3807c6529e1304b17b8009809be9d7567105bbfe09dd4794cbe9012e44e5403d307b4dc76902dc03a37d334a8027ed897495e58caf7ad50e8997756bf6e",
+      "security_hint": "Default PIN: 1234"
+    },
+    {
+      "id": 3,
+      "username": "admin",
+      "full_name": "System Administrator",
+      "role": "Admin",
+      "password_hash": "07bb86c29208cb359365452d5904bed0:1dbcc463fa65c56b9338ec510078a83fc3ec2149f0038d0c9010c55223f11a3b8da9b21a08a3f3ecca24296393e40805086f416ee43563622313b6bf3adb0889",
+      "created_at": "2026-10-02 16:10:27",
+      "recovery_pin_hash": "9e769433d65878938e743ad3d919ed98:1c862c58fbe3e7287e83fae1dd7aff94d832d7bf8d9a9d8a9ed8a2281ba99b9967ea3517f33f892241bd8f6ecd82f6ef59b79bb239c0720d289be3d0b5e5be20",
+      "security_hint": "Default PIN: 1234"
+    }
+  ],
+  "technicians": [
+    {
+      "id": 1,
+      "name": "Ahmed Al-Mansoor",
+      "employee_id": "TECH-101",
+      "phone": "",
+      "created_at": "2026-10-02 15:22:45"
+    },
+    {
+      "id": 2,
+      "name": "Rajesh Kumar",
+      "employee_id": "TECH-102",
+      "phone": "",
+      "created_at": "2026-10-02 15:22:45"
+    },
+    {
+      "id": 3,
+      "name": "Mohammed Tariq",
+      "employee_id": "TECH-103",
+      "phone": "",
+      "created_at": "2026-10-02 15:22:45"
+    },
+    {
+      "id": 4,
+      "name": "Suresh Nair",
+      "employee_id": "TECH-104",
+      "phone": "",
+      "created_at": "2026-10-02 15:22:45"
+    },
+    {
+      "id": 5,
+      "name": "John Bautista",
+      "employee_id": "TECH-105",
+      "phone": "",
+      "created_at": "2026-10-02 15:22:45"
+    }
+  ],
+  "sites": [
+    {
+      "id": 1,
+      "name": "Main Plant - Block A",
+      "location": "Industrial Zone 1",
+      "created_at": "2026-10-02 15:22:45"
+    },
+    {
+      "id": 2,
+      "name": "Substation 4",
+      "location": "North Sector",
+      "created_at": "2026-10-02 15:22:45"
+    },
+    {
+      "id": 3,
+      "name": "HVAC Central Chiller",
+      "location": "Building B",
+      "created_at": "2026-10-02 15:22:45"
+    },
+    {
+      "id": 4,
+      "name": "Warehouse Logistics Hub",
+      "location": "South Gate",
+      "created_at": "2026-10-02 15:22:45"
+    },
+    {
+      "id": 5,
+      "name": "Water Treatment Facility",
+      "location": "Sector 7",
+      "created_at": "2026-10-02 15:22:45"
+    }
+  ],
+  "overtime_records": [
+    {
+      "id": 1,
+      "date": "2026-10-02",
+      "technician_name": "Ahmed Al-Mansoor",
+      "site": "Main Plant - Block A",
+      "commenced_on": "17:00",
+      "finished_on": "20:30",
+      "hours": 3.5,
+      "remarks": "Chiller pump maintenance",
+      "created_at": "2026-10-02 15:22:45",
+      "updated_at": "2026-10-02 15:22:45",
+      "recorded_by": "Supervisor"
+    },
+    {
+      "id": 2,
+      "date": "2026-10-02",
+      "technician_name": "Rajesh Kumar",
+      "site": "Substation 4",
+      "commenced_on": "18:00",
+      "finished_on": "22:00",
+      "hours": 4,
+      "remarks": "Switchgear inspection",
+      "created_at": "2026-10-02 15:22:45",
+      "updated_at": "2026-10-02 15:22:45",
+      "recorded_by": "Supervisor"
+    },
+    {
+      "id": 3,
+      "date": "2026-10-02",
+      "technician_name": "Mohammed Tariq",
+      "site": "HVAC Central Chiller",
+      "commenced_on": "22:00",
+      "finished_on": "02:00",
+      "hours": 4,
+      "remarks": "Overnight emergency repair",
+      "created_at": "2026-10-02 15:22:45",
+      "updated_at": "2026-10-02 15:22:45",
+      "recorded_by": "Supervisor"
+    },
+    {
+      "id": 4,
+      "date": "2026-10-02",
+      "technician_name": "Ahmed Al-Mansoor",
+      "site": "HVAC Central Chiller",
+      "commenced_on": "17:00",
+      "finished_on": "20:00",
+      "hours": 3,
+      "remarks": "",
+      "created_at": "2026-10-02 15:42:30",
+      "updated_at": "2026-10-02 15:42:30",
+      "recorded_by": "Main Supervisor"
+    },
+    {
+      "id": 5,
+      "date": "2026-10-02",
+      "technician_name": "Ahmed Al-Mansoor",
+      "site": "HVAC Central Chiller",
+      "commenced_on": "17:00",
+      "finished_on": "20:00",
+      "hours": 3,
+      "remarks": "",
+      "created_at": "2026-10-02 15:42:40",
+      "updated_at": "2026-10-02 15:42:40",
+      "recorded_by": "Main Supervisor"
+    }
+  ]
+}

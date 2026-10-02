@@ -1106,3 +1106,63 @@ body {
 .btn-danger:hover {
   background: #b91c1c;
 }
+
+/* Backup Center, Auto-Vault & Forgot Password Link Styles */
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.84rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.link-btn:hover {
+  color: var(--primary-hover);
+}
+
+.backup-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.backup-box {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.backup-box h4 {
+  font-size: 0.94rem;
+  color: #0f172a;
+}
+
+.backup-box p {
+  font-size: 0.8rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.vault-banner {
+  background: #ecfdf5;
+  border-bottom: 2px solid #10b981;
+  color: #065f46;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 860px) {
+  .backup-grid {
+    grid-template-columns: 1fr;
+  }
+}

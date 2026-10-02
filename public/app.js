@@ -962,9 +962,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     e.target.value = '';
   });
 
-  // Browser Auto-Vault Restore buttons
+  // Browser Auto-Vault Restore & 1-Click Render Update buttons
   document.getElementById('btnRestoreVaultNow').addEventListener('click', restoreFromLocalVault);
   document.getElementById('btnManualVaultSync').addEventListener('click', restoreFromLocalVault);
+
+  const btnPublishRender = document.getElementById('btnPublishRenderUpdate');
+  if (btnPublishRender) {
+    btnPublishRender.addEventListener('click', async () => {
+      btnPublishRender.disabled = true;
+      btnPublishRender.textContent = '⏳ Pushing to GitHub & Render...';
+      try {
+        const res = await apiFetch('/api/admin/publish-update', { method: 'POST' });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(data.message);
+        } else {
+          showToast(data.error || 'Failed to push update');
+        }
+      } catch (err) {
+        showToast('Error pushing update');
+      } finally {
+        btnPublishRender.disabled = false;
+        btnPublishRender.textContent = '🚀 Push Update to Render.com';
+      }
+    });
+  }
 
   // Export Excel (.xlsx)
   document.getElementById('btnExportExcel').addEventListener('click', () => {

@@ -476,11 +476,16 @@
           </div>
 
           <div class="backup-box">
-            <h4>3. Browser Auto-Backup Vault</h4>
-            <p id="vaultStatusText">Automatically mirrors your latest data in this browser so nothing is lost during cloud server updates.</p>
-            <button type="button" class="btn btn-secondary btn-sm" id="btnManualVaultSync">
-              🔄 Sync Browser Vault to Server
-            </button>
+            <h4>3. Auto-Update Render.com &amp; Browser Vault</h4>
+            <p id="vaultStatusText">Automatically mirrors your latest data and pushes app updates to GitHub &amp; Render.com.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnManualVaultSync">
+                🔄 Sync Browser Vault
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" id="btnPublishRenderUpdate">
+                🚀 Push Update to Render.com
+              </button>
+            </div>
           </div>
         </div>
       </div>

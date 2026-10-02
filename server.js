@@ -594,6 +594,32 @@ app.post('/api/backup/restore', requireAuth, requireAdminOrSupervisor, (req, res
   }
 });
 
+// 1-Click Publish Update to GitHub & Trigger Render.com Auto-Deploy
+app.post('/api/admin/publish-update', requireAuth, requireAdminOrSupervisor, (req, res) => {
+  try {
+    saveAutoBackupToDisk();
+    const { execSync } = require('child_process');
+    execSync('git add .', { cwd: __dirname, stdio: 'pipe' });
+    try {
+      execSync('git -c user.name="ahammedkabeer" -c user.email="ahammedkabeer200@gmail.com" commit -m "Auto-publish application update & backup to Render"', {
+        cwd: __dirname,
+        stdio: 'pipe'
+      });
+    } catch (_) {
+      // No new file diffs to commit, still push any unpushed commits
+    }
+    execSync('git push origin main', { cwd: __dirname, stdio: 'pipe' });
+    res.json({
+      success: true,
+      message: 'Published to GitHub! Render.com is now automatically updating your live web application.'
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: 'Could not push to GitHub from this environment: ' + (err.stderr ? err.stderr.toString() : err.message)
+    });
+  }
+});
+
 // Helper: Calculate hours between two HH:MM strings (handles overnight shifts)
 function calculateHours(commencedOn, finishedOn) {
   if (!commencedOn || !finishedOn) return 0;
@@ -1056,6 +1082,45 @@ app.post('/api/import-excel', requireAuth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// --- AUTOMATIC GITHUB & RENDER.COM SYNC WATCHER (Runs automatically on local PC) ---
+if (!process.env.RENDER && fs.existsSync(path.join(__dirname, '.git'))) {
+  let syncTimer = null;
+  let isSyncing = false;
+
+  const triggerAutoGitPush = () => {
+    if (isSyncing) return;
+    isSyncing = true;
+    const { exec } = require('child_process');
+    const cmd = 'git add . && git -c user.name="ahammedkabeer" -c user.email="ahammedkabeer200@gmail.com" commit -m "Auto-sync application update to Render.com" && git push origin main';
+    exec(cmd, { cwd: __dirname }, (err) => {
+      isSyncing = false;
+      if (!err) {
+        console.log('[Auto-Sync] Changes pushed to GitHub -> Render.com is updating automatically!');
+      }
+    });
+  };
+
+  const watchedFiles = [
+    path.join(__dirname, 'server.js'),
+    path.join(__dirname, 'render.yaml'),
+    path.join(__dirname, 'package.json'),
+    path.join(__dirname, 'public', 'index.html'),
+    path.join(__dirname, 'public', 'styles.css'),
+    path.join(__dirname, 'public', 'app.js')
+  ];
+
+  watchedFiles.forEach((filePath) => {
+    if (fs.existsSync(filePath)) {
+      fs.watchFile(filePath, { interval: 4000 }, (curr, prev) => {
+        if (curr.mtimeMs !== prev.mtimeMs) {
+          clearTimeout(syncTimer);
+          syncTimer = setTimeout(triggerAutoGitPush, 5000);
+        }
+      });
+    }
+  });
+}
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Secure Overtime Report Server running on http://localhost:${PORT}`);

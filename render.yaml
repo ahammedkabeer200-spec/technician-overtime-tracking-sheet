@@ -3,6 +3,8 @@ services:
     name: technician-overtime-portal
     runtime: node
     plan: free
+    branch: main
+    autoDeploy: true
     buildCommand: npm install
     startCommand: npm start
     envVars:
@@ -14,3 +16,5 @@ services:
         value: supervisor
       - key: ADMIN_PASSWORD
         value: Supervisor@123
+      - key: GITHUB_REPO
+        value: ahammedkabeer200-spec/technician-overtime-tracking-sheet

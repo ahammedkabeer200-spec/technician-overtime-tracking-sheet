@@ -1,4 +1,4 @@
-const CACHE_NAME = 'overtime-manager-v1';
+const CACHE_NAME = 'overtime-manager-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -29,6 +29,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request)
+      .then((res) => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        return res;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

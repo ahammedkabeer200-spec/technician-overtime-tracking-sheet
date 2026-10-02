@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1e40af" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Overtime Report Manager</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <!-- SECURITY LOGIN OVERLAY (Blocks unauthorized public access) -->
+  <div id="loginScreen" class="login-screen no-print">
+    <div class="login-card">
+      <div class="login-brand">
+        <img src="/icon.svg" alt="Logo" class="login-logo" />
+        <h2>Overtime Report Portal</h2>
+        <p>Authorized Access Only — Supervisors &amp; Engineers</p>
+      </div>
+
+      <form id="loginForm" class="login-form">
+        <div id="loginError" class="login-error hidden"></div>
+        <div class="form-field">
+          <label for="loginUsername">Username</label>
+          <input type="text" id="loginUsername" placeholder="Enter Supervisor or Engineer username" autocomplete="username" required />
+        </div>
+        <div class="form-field">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg login-submit">
+          🔒 Sign In to Overtime System
+        </button>
+      </form>
+
+      <div class="login-default-hint">
+        <strong>Default Initial Accounts (Change after login):</strong>
+        <div class="demo-creds">
+          <button type="button" class="cred-pill" id="btnFillSupervisor">
+            👔 Supervisor: <code>supervisor</code> / <code>Supervisor@123</code>
+          </button>
+          <button type="button" class="cred-pill" id="btnFillEngineer">
+            👷 Engineer: <code>engineer1</code> / <code>Engineer@123</code>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top App Header (Hidden when printing) -->
+  <header class="app-header no-print">
+    <div class="header-brand">
+      <img src="/icon.svg" alt="Logo" class="brand-logo" />
+      <div>
+        <h1>Overtime Report Manager</h1>
+        <p class="brand-subtitle">Supervisor Excel Sheet • Mobile Logger • Secure Cloud Sync</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div id="userBadge" class="user-badge" title="Currently signed-in user">
+        <span>👤</span>
+        <span id="currentUserName">Supervisor</span>
+        <span id="currentUserRole" class="role-tag">Supervisor</span>
+      </div>
+
+      <div id="syncStatus" class="sync-badge connected" title="Real-time database sync across all connected devices">
+        <span class="sync-dot"></span>
+        <span id="syncText">Live Sync</span>
+      </div>
+
+      <button class="btn btn-outline btn-sm" id="btnConnectDevices" type="button">
+        📱 Share / QR
+      </button>
+
+      <button class="btn btn-outline btn-sm hidden" id="btnInstallPwa" type="button">
+        ⬇️ Install App
+      </button>
+
+      <label class="btn btn-secondary btn-sm file-label" title="Import existing Supervisor Excel (.xlsx)">
+        📂 Import Excel
+        <input type="file" id="excelFileInput" accept=".xlsx,.xls" hidden />
+      </label>
+
+      <button class="btn btn-success btn-sm" id="btnExportExcel" type="button" title="Download exact Supervisor Excel (.xlsx) format">
+        📊 Export Excel (.xlsx)
+      </button>
+
+      <button class="btn btn-primary btn-sm" id="btnPrintReport" type="button" title="Print or Save as PDF in exact Supervisor Report layout">
+        🖨️ Print / PDF
+      </button>
+
+      <button class="btn btn-danger btn-sm" id="btnLogout" type="button" title="Sign Out">
+        🚪 Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs (Desktop Top Bar & Mobile Bottom Bar) -->
+  <nav class="app-nav no-print">
+    <button class="nav-tab active" data-tab="sheetView" type="button">
+      <span class="nav-icon">📋</span>
+      <span>Supervisor Sheet</span>
+    </button>
+    <button class="nav-tab" data-tab="quickLogView" type="button">
+      <span class="nav-icon">➕</span>
+      <span>Log Overtime</span>
+    </button>
+    <button class="nav-tab" data-tab="dashboardView" type="button">
+      <span class="nav-icon">📈</span>
+      <span>Summary Dashboard</span>
+    </button>
+    <button class="nav-tab" data-tab="manageListsView" type="button">
+      <span class="nav-icon">👷</span>
+      <span>Technicians &amp; Sites</span>
+    </button>
+    <button class="nav-tab" data-tab="securityView" type="button">
+      <span class="nav-icon">🔐</span>
+      <span>Security &amp; Logins</span>
+    </button>
+  </nav>
+
+  <!-- Shared Filter Bar (Visible on Sheet & Dashboard views) -->
+  <section id="filterBar" class="filter-bar no-print">
+    <div class="filter-group">
+      <label for="filterStartDate">From Date</label>
+      <input type="date" id="filterStartDate" />
+    </div>
+    <div class="filter-group">
+      <label for="filterEndDate">To Date</label>
+      <input type="date" id="filterEndDate" />
+    </div>
+    <div class="filter-group">
+      <label for="filterTechnician">Technician</label>
+      <select id="filterTechnician">
+        <option value="">All Technicians</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filterSite">Site</label>
+      <select id="filterSite">
+        <option value="">All Sites</option>
+      </select>
+    </div>
+    <div class="filter-group filter-search">
+      <label for="filterSearch">Search</label>
+      <input type="text" id="filterSearch" placeholder="Search name, site, date..." />
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-ghost btn-sm" id="btnClearFilters" type="button">Reset</button>
+    </div>
+  </section>
+
+  <!-- Datalists for autocomplete across forms -->
+  <datalist id="techniciansDatalist"></datalist>
+  <datalist id="sitesDatalist"></datalist>
+
+  <main class="main-container">
+    <!-- TAB 1: SUPERVISOR EXCEL SHEET VIEW -->
+    <section id="sheetView" class="tab-panel active">
+      <form id="inlineAddForm" class="excel-quick-bar no-print">
+        <div class="quick-bar-title">⚡ Quick Add Row to Sheet:</div>
+        <div class="quick-bar-inputs">
+          <input type="date" id="inlineDate" required title="Date" />
+          <input type="text" id="inlineTech" list="techniciansDatalist" placeholder="Technician name..." required />
+          <input type="text" id="inlineSite" list="sitesDatalist" placeholder="Site..." required />
+          <div class="time-pair">
+            <label>Start:</label>
+            <input type="time" id="inlineStart" value="17:00" required />
+          </div>
+          <div class="time-pair">
+            <label>End:</label>
+            <input type="time" id="inlineEnd" value="20:00" required />
+          </div>
+          <div class="hours-preview-pill" id="inlineHoursPreview">3.00 hrs</div>
+          <button type="submit" class="btn btn-primary btn-sm">➕ Add to Report</button>
+        </div>
+      </form>
+
+      <div class="excel-workbook-wrapper">
+        <div class="excel-formula-bar no-print">
+          <span class="cell-ref">A1:G25</span>
+          <span class="fx-symbol">fx</span>
+          <span class="formula-text">OVERTIME REPORT — Live Synchronized Sheet (Authorized Supervisors &amp; Engineers Only)</span>
+        </div>
+
+        <div class="excel-sheet-scroll">
+          <table class="excel-table" id="supervisorExcelTable">
+            <thead>
+              <tr class="excel-col-letters no-print">
+                <th class="row-num-corner"></th>
+                <th>A</th>
+                <th>B</th>
+                <th>C</th>
+                <th>D</th>
+                <th>E</th>
+                <th>F</th>
+                <th>G</th>
+                <th class="action-col-header">Actions</th>
+              </tr>
+              <tr class="excel-title-row">
+                <td class="excel-row-number no-print">1-4</td>
+                <th colspan="7" class="excel-report-banner">OVERTIME REPORT</th>
+                <td class="no-print action-cell-empty"></td>
+              </tr>
+              <tr class="excel-header-row">
+                <td class="excel-row-number no-print">5</td>
+                <th class="col-sl">Sl.no</th>
+                <th class="col-date">Date</th>
+                <th class="col-tech">Technician name</th>
+                <th class="col-site">Site</th>
+                <th class="col-comm">Commenced on</th>
+                <th class="col-fin">Finished on</th>
+                <th class="col-hrs">Hours</th>
+                <th class="no-print col-actions">Manage</th>
+              </tr>
+            </thead>
+            <tbody id="excelSheetBody"></tbody>
+            <tfoot>
+              <tr class="excel-total-row">
+                <td class="excel-row-number no-print">∑</td>
+                <td colspan="6" class="total-label-cell">TOTAL OVERTIME HOURS</td>
+                <td class="total-value-cell" id="sheetTotalHours">0.00</td>
+                <td class="no-print"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="print-signatures print-only">
+          <div class="sig-box">
+            <div class="sig-line"></div>
+            <p>Prepared By (Engineer / Supervisor)</p>
+          </div>
+          <div class="sig-box">
+            <div class="sig-line"></div>
+            <p>Verified &amp; Approved By (Manager)</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MOBILE-FRIENDLY QUICK LOG OVERTIME VIEW -->
+    <section id="quickLogView" class="tab-panel no-print">
+      <div class="log-grid">
+        <div class="card log-form-card">
+          <div class="card-header">
+            <h2 id="formModeTitle">📝 Record Technician Overtime</h2>
+            <p>Authorized Engineers &amp; Supervisors can log technician overtime from mobile or desktop.</p>
+          </div>
+          <form id="overtimeForm" class="overtime-form">
+            <input type="hidden" id="editRecordId" value="" />
+
+            <div class="form-row">
+              <div class="form-field">
+                <label for="formDate">Date *</label>
+                <input type="date" id="formDate" required />
+              </div>
+              <div class="form-field">
+                <label for="formTechnician">Technician Name *</label>
+                <input type="text" id="formTechnician" list="techniciansDatalist" placeholder="Select or type technician name" required />
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="formSite">Site / Location *</label>
+              <input type="text" id="formSite" list="sitesDatalist" placeholder="Select or type site name" required />
+            </div>
+
+            <div class="preset-shifts">
+              <span class="preset-label">Quick Shift Presets:</span>
+              <button type="button" class="chip-btn" data-start="17:00" data-end="19:00">17:00 - 19:00 (2h)</button>
+              <button type="button" class="chip-btn" data-start="17:00" data-end="20:00">17:00 - 20:00 (3h)</button>
+              <button type="button" class="chip-btn" data-start="17:00" data-end="21:00">17:00 - 21:00 (4h)</button>
+              <button type="button" class="chip-btn" data-start="18:00" data-end="22:00">18:00 - 22:00 (4h)</button>
+              <button type="button" class="chip-btn" data-start="22:00" data-end="02:00">22:00 - 02:00 (Night 4h)</button>
+            </div>
+
+            <div class="form-row three-col">
+              <div class="form-field">
+                <label for="formCommenced">Commenced on *</label>
+                <input type="time" id="formCommenced" value="17:00" required />
+              </div>
+              <div class="form-field">
+                <label for="formFinished">Finished on *</label>
+                <input type="time" id="formFinished" value="20:00" required />
+              </div>
+              <div class="form-field">
+                <label for="formHours">Hours (Auto) *</label>
+                <input type="number" id="formHours" step="0.01" min="0" value="3" required />
+              </div>
+            </div>
+
+            <div id="overnightNotice" class="overnight-banner hidden">
+              🌙 Overnight shift detected (crosses midnight) — hours calculated automatically!
+            </div>
+
+            <div class="form-field">
+              <label for="formRemarks">Work Remarks / Job Details (Optional)</label>
+              <input type="text" id="formRemarks" placeholder="e.g., Emergency compressor repair, preventive maintenance..." />
+            </div>
+
+            <div class="form-buttons">
+              <button type="submit" class="btn btn-primary btn-lg" id="btnSubmitForm">
+                ✅ Save Overtime Record
+              </button>
+              <button type="button" class="btn btn-ghost btn-lg hidden" id="btnCancelEdit">
+                Cancel Edit
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card recent-logs-card">
+          <div class="card-header">
+            <h2>🕒 Recent Entries</h2>
+            <p>Includes audit trail of which Supervisor or Engineer logged each shift</p>
+          </div>
+          <div id="recentEntriesList" class="recent-entries-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: SUMMARY DASHBOARD & ANALYTICS -->
+    <section id="dashboardView" class="tab-panel no-print">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-label">Total Overtime Hours</span>
+          <strong class="kpi-value" id="kpiTotalHours">0.00</strong>
+          <span class="kpi-sub">Across filtered records</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Total Overtime Shifts</span>
+          <strong class="kpi-value" id="kpiTotalShifts">0</strong>
+          <span class="kpi-sub">Recorded entries</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Technicians with OT</span>
+          <strong class="kpi-value" id="kpiActiveTechs">0</strong>
+          <span class="kpi-sub">Unique technicians</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Average OT / Shift</span>
+          <strong class="kpi-value" id="kpiAvgHours">0.00 hrs</strong>
+          <span class="kpi-sub">Mean duration</span>
+        </div>
+      </div>
+
+      <div class="dashboard-Grid">
+        <div class="card">
+          <div class="card-header">
+            <h2>👷 Overtime Summary by Technician</h2>
+            <p>Total hours and shifts per technician</p>
+          </div>
+          <div id="techSummaryList" class="summary-bars-list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>🏭 Overtime Summary by Site</h2>
+            <p>Total hours and shifts per site</p>
+          </div>
+          <div id="siteSummaryList" class="summary-bars-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: MANAGE TECHNICIANS & SITES -->
+    <section id="manageListsView" class="tab-panel no-print">
+      <div class="dashboard-Grid">
+        <div class="card">
+          <div class="card-header">
+            <h2>👷 Saved Technicians</h2>
+            <p>Pre-fill dropdown list for quick selection</p>
+          </div>
+          <form id="addTechForm" class="inline-list-form">
+            <input type="text" id="newTechName" placeholder="Technician Full Name *" required />
+            <input type="text" id="newTechEmpId" placeholder="ID (e.g. TECH-106)" />
+            <button type="submit" class="btn btn-primary btn-sm">Add Technician</button>
+          </form>
+          <ul id="techManageList" class="manage-items-list"></ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>🏭 Saved Sites / Locations</h2>
+            <p>Pre-fill dropdown list of work sites</p>
+          </div>
+          <form id="addSiteForm" class="inline-list-form">
+            <input type="text" id="newSiteName" placeholder="Site Name *" required />
+            <input type="text" id="newSiteLocation" placeholder="Area / Sector" />
+            <button type="submit" class="btn btn-primary btn-sm">Add Site</button>
+          </form>
+          <ul id="siteManageList" class="manage-items-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: SECURITY & ENGINEER LOGINS -->
+    <section id="securityView" class="tab-panel no-print">
+      <div class="dashboard-Grid">
+        <!-- Create / Manage Supervisor & Engineer Logins -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🔐 Authorized Supervisor &amp; Engineer Logins</h2>
+            <p>Only users listed here have permission to sign in and access overtime reports.</p>
+          </div>
+
+          <form id="addUserForm" class="overtime-form" style="margin-bottom: 18px;">
+            <div class="form-row">
+              <div class="form-field">
+                <label for="newUserUsername">Username *</label>
+                <input type="text" id="newUserUsername" placeholder="e.g. eng_khalid" required />
+              </div>
+              <div class="form-field">
+                <label for="newUserFullName">Full Name *</label>
+                <input type="text" id="newUserFullName" placeholder="e.g. Engr. Khalid" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label for="newUserRole">Permission Role *</label>
+                <select id="newUserRole">
+                  <option value="Engineer">Engineer (Log &amp; View Reports)</option>
+                  <option value="Supervisor">Supervisor (Full Admin &amp; User Control)</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="newUserPassword">Initial Password (min 6 chars) *</label>
+                <input type="password" id="newUserPassword" placeholder="Set password" minlength="6" required />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" id="btnCreateUser">
+              ➕ Grant Login Permission
+            </button>
+          </form>
+
+          <ul id="userManageList" class="manage-items-list"></ul>
+        </div>
+
+        <!-- Change Own Password & Cloud Info -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🔑 Change My Password</h2>
+            <p>Update your personal Supervisor or Engineer password</p>
+          </div>
+          <form id="changePasswordForm" class="overtime-form">
+            <div class="form-field">
+              <label for="curPass">Current Password *</label>
+              <input type="password" id="curPass" required />
+            </div>
+            <div class="form-field">
+              <label for="newPass">New Password (min 6 chars) *</label>
+              <input type="password" id="newPass" minlength="6" required />
+            </div>
+            <button type="submit" class="btn btn-success btn-sm">
+              💾 Update My Password
+            </button>
+          </form>
+
+          <div class="info-callout" style="margin-top: 22px;">
+            <strong>☁️ 24/7 Public Cloud Security Features Active:</strong>
+            <ul>
+              <li><strong>Encrypted Password Storage:</strong> All passwords are salted and hashed with <code>crypto.scrypt</code>.</li>
+              <li><strong>Signed Token Protection:</strong> Every API call &amp; Excel export requires a valid Supervisor/Engineer token.</li>
+              <li><strong>Brute-Force Protection:</strong> Automatically blocks repeated failed login attempts.</li>
+              <li><strong>Audit Trail:</strong> Every overtime entry records which Engineer or Supervisor logged it.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: Multi-Device Connect & App Setup -->
+  <div id="connectModal" class="modal-backdrop hidden no-print">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>📱 Share App Link / Connect Devices</h3>
+        <button type="button" class="btn-close" id="btnCloseModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Share your server URL with authorized Supervisors &amp; Engineers:</p>
+        <div id="networkUrlsContainer" class="network-urls-box"></div>
+        <div class="qr-section">
+          <img id="qrCodeImage" alt="Scan QR Code to open on phone" class="qr-image" />
+          <p class="qr-caption">Scan with phone camera to open the Overtime App &amp; sign in</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="toast-container no-print"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

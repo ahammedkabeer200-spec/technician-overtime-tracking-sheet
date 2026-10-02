@@ -1,0 +1,18 @@
+{
+  "name": "Overtime Report Manager",
+  "short_name": "Overtime",
+  "description": "Technician Overtime Recording, Excel Report Generator & Multi-Device Sync App",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e40af",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

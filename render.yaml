@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: technician-overtime-portal
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: ADMIN_USERNAME
+        value: supervisor
+      - key: ADMIN_PASSWORD
+        value: Supervisor@123

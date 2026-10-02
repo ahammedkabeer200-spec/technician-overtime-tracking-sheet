@@ -1,0 +1,17 @@
+{
+  "name": "technician-overtime-tracking-sheet",
+  "version": "1.0.0",
+  "description": "Secure Supervisor & Engineer Overtime Tracking Web/Mobile/Desktop App with Excel Export",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1"
+  }
+}

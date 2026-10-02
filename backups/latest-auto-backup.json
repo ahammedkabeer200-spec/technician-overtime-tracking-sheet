@@ -1,13 +1,13 @@
 {
   "version": "2.0",
-  "exported_at": "2026-10-02T16:31:38.921Z",
+  "exported_at": "2026-10-02T16:44:58.515Z",
   "users": [
     {
       "id": 1,
       "username": "supervisor",
       "full_name": "Main Supervisor",
       "role": "Supervisor",
-      "password_hash": "460a82a8783af0b9ed405c8b7a414d92:66f1cb2d86bd61273117893e4892bc76b24b3a19e685bd5cb4811dafb03096ec44cc1db2adaa06944bd6d7e4e3db7c89f86d9f0c6823087a691959f203dd1597",
+      "password_hash": "e57fa3fe783959ab6d4e24f5a1cf1b5a:fd6c1358ae81a57c73ce3b63f95067937eea323738c8d7ee6cdc6740b825ccb6918bb44bee7bb76f4457c018327a4eb9f78fea228a5b5d39a84da226b870ef55",
       "created_at": "2026-10-02 15:39:03",
       "recovery_pin_hash": "2a95c093d63f4151c6cff61b2125c63d:40954b0b24e86143c0897e16abade91c6065531ffba80c952a2c7a97a2a311743c07b66cc8029e4a7bb1339196d688d8e252955216ee1a9a18f6b439db1e5b9e",
       "security_hint": "Default PIN: 1234"

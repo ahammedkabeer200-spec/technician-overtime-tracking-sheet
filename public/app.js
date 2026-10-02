@@ -2,8 +2,11 @@
 
 const VAULT_STORAGE_KEY = 'ot_auto_backup_vault_v2';
 
+// Clear any previously stored token so login is always required
+localStorage.removeItem('ot_auth_token');
+
 const state = {
-  token: localStorage.getItem('ot_auth_token') || '',
+  token: '',
   user: null,
   records: [],
   technicians: [],
@@ -34,6 +37,10 @@ async function apiFetch(url, options = {}) {
 }
 
 function showLoginScreen() {
+  const uInput = document.getElementById('loginUsername');
+  const pInput = document.getElementById('loginPassword');
+  if (uInput) uInput.value = '';
+  if (pInput) pInput.value = '';
   document.getElementById('loginScreen').classList.remove('hidden');
 }
 

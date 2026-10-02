@@ -22,17 +22,17 @@
       </div>
 
       <!-- SIGN IN FORM -->
-      <form id="loginForm" class="login-form">
+      <form id="loginForm" class="login-form" autocomplete="off">
         <div id="loginError" class="login-error hidden"></div>
         <div id="loginSuccess" class="info-callout hidden"></div>
 
         <div class="form-field">
           <label for="loginUsername">Username</label>
-          <input type="text" id="loginUsername" placeholder="Enter Admin, Supervisor, or Engineer username" autocomplete="username" required />
+          <input type="text" id="loginUsername" placeholder="Enter your username" autocomplete="off" required />
         </div>
         <div class="form-field">
           <label for="loginPassword">Password</label>
-          <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password" required />
+          <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="new-password" required />
         </div>
         <button type="submit" class="btn btn-primary btn-lg login-submit">
           🔒 Sign In to Overtime System
@@ -43,20 +43,20 @@
       </form>
 
       <!-- FORGOT PASSWORD FORM (Hidden by default) -->
-      <form id="forgotPasswordForm" class="login-form hidden">
+      <form id="forgotPasswordForm" class="login-form hidden" autocomplete="off">
         <div id="forgotError" class="login-error hidden"></div>
         <div class="form-field">
           <label for="forgotUsername">Your Username *</label>
-          <input type="text" id="forgotUsername" placeholder="e.g. supervisor or admin" required />
+          <input type="text" id="forgotUsername" placeholder="Enter your username" autocomplete="off" required />
         </div>
         <div class="form-field">
-          <label for="forgotPin">Recovery PIN or Master Recovery Key *</label>
-          <input type="password" id="forgotPin" placeholder="Default PIN: 1234 (or ADMIN-RECOVERY-2026)" required />
-          <small id="forgotHintText" style="color:#64748b;font-size:0.76rem;">Enter your 4-digit Recovery PIN or ask Admin</small>
+          <label for="forgotPin">Recovery PIN or Recovery Key *</label>
+          <input type="password" id="forgotPin" placeholder="Enter your Recovery PIN" autocomplete="new-password" required />
+          <small id="forgotHintText" style="color:#64748b;font-size:0.76rem;">Enter your personal Recovery PIN or contact Admin</small>
         </div>
         <div class="form-field">
           <label for="forgotNewPassword">New Password (min 6 chars) *</label>
-          <input type="password" id="forgotNewPassword" placeholder="Enter new password" minlength="6" required />
+          <input type="password" id="forgotNewPassword" placeholder="Enter new password" autocomplete="new-password" minlength="6" required />
         </div>
         <button type="submit" class="btn btn-success btn-lg login-submit">
           🔑 Reset My Password
@@ -65,21 +65,6 @@
           <button type="button" id="btnBackToLogin" class="link-btn">← Back to Sign In</button>
         </div>
       </form>
-
-      <div class="login-default-hint">
-        <strong>Default Initial Accounts (Tap to fill):</strong>
-        <div class="demo-creds">
-          <button type="button" class="cred-pill" id="btnFillAdmin">
-            🛡️ Admin: <code>admin</code> / <code>Admin@123</code> (PIN: <code>1234</code>)
-          </button>
-          <button type="button" class="cred-pill" id="btnFillSupervisor">
-            👔 Supervisor: <code>supervisor</code> / <code>Supervisor@123</code> (PIN: <code>1234</code>)
-          </button>
-          <button type="button" class="cred-pill" id="btnFillEngineer">
-            👷 Engineer: <code>engineer1</code> / <code>Engineer@123</code> (PIN: <code>1234</code>)
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 
